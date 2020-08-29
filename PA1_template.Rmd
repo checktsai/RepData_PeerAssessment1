@@ -3,6 +3,8 @@ title: "Reproducible Research: Peer Assessment 1"
 output: 
   html_document:
     keep_md: true
+editor_options: 
+  chunk_output_type: console
 ---
 
 
@@ -62,17 +64,52 @@ median(stepsPerDay$Steps, na.rm=TRUE)
 1.Time series plot of the average number of steps taken
 ```{r}
 # create steps/time
-stepsPerTime <- aggregate(steps~interval,data=activity,FUN=mean,na.action=na.omit)
+stepsPerInterval <- aggregate(steps~interval,data=activity,FUN=mean,na.action=na.omit)
 # line plot
-lPlot <- ggplot(stepsPerTime, aes(interval, steps))
+lPlot <- ggplot(stepsPerInterval, aes(interval, steps))
 lPlot+geom_line(col="blue")+
   ggtitle("Average steps per interval")+
-  xlab("Time")+
+  xlab("interval")+
   ylab("Steps")
 ```
 
+1. The 5-minute interval that, on average, contains the maximum number of steps
+```{r}
+stepsPerInterval[which.max(stepsPerInterval$steps),]$interval
+```
 ## Imputing missing values
+1. find percentage of NA
+```{r}
+mean(is.na(activity$steps))*100
 
+```
+2. strategy for imputing missing data
+Use average  5-minute interval to replace NA
+```{r}
+activity$CompleteSteps <- ifelse(is.na(activity$steps), round(stepsPerInterval$steps[match(activity$interval, stepsPerInterval$interval)],0), activity$steps)
+activityNoNA <- data.frame(steps=activity$CompleteSteps, interval=activity$interval, date=activity$date)
+head(activityNoNA)
+```
+
+3. Histogram of the total number of steps taken each day
+Calculate the total number of steps taken per day
+
+```{r}
+stepsPerDayNoNA <- aggregate(activityNoNA$steps, list(activityNoNA$date), FUN=sum)
+colnames(stepsPerDayNoNA) <- c("Date", "Steps")
+head(stepsPerDayNoNA)
+```
+
+draw the histogram
+```{r}
+
+noNAPlot <- ggplot(stepsPerDayNoNA, aes(Steps))
+noNAPlot+
+  geom_histogram(fill="blue",col="green",binwidth=2000)+
+  ggtitle("Steps per day")+
+  xlab("Steps")+
+  ylab("Frequency")
+```
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
